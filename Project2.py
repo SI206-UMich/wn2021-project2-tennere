@@ -17,6 +17,28 @@ def get_titles_from_search_results(filename):
 
     with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), filename), 'r') as f:
         url = f.read()
+    soup = BeautifulSoup(url, 'html.parser')
+
+    titles_list = []
+    authors_list = []
+    
+    tags = soup.find_all(itemtype = "http://schema.org/Book")
+    for tag in tags:
+        tag1 = tag.find('a', class_ = 'bookTitle')
+        soan = tag1.find('span')
+        title = soan.get_text()
+        title = title.strip()
+        titles_list.append(title)
+
+        tag2 = tag.find('div', class_ = 'authorName__container')
+        span = tag2.find('span')
+        author = span.get_text()
+        author = author.strip()
+        authors_list.append(author)
+
+    '''
+    THIS didn't work (would have been instead of lines 25-37) because it didn't align the right author 
+    with right books since some books had more than one author
 
     soup = BeautifulSoup(url, 'html.parser')
     titles = soup.find_all('a', class_ = 'bookTitle')
@@ -24,20 +46,21 @@ def get_titles_from_search_results(filename):
     
     author_list = []
     for author in authors:
-        author_list.append(author.text.strip())
+        x = author.find('span', itemprop = 'name')
+        author_list.append(x.text.strip())
+
     titles_list = []
     for title in titles:
         titles_list.append(title.text.strip())
-
-    #now make the list of tuples and return that:
-    #loop thru the length of titles and for each list make a tuple 
-    #  with i and then append tuple to the results list
+    '''
+    #now make the list of tuples
     results = []
-    for i in range(len(titles)):
+    for i in range(len(titles_list)):
         x = ()
-        x = (titles_list[i], author_list[i])
+        x = (titles_list[i], authors_list[i])
         results.append(x)
     return results
+
 
 def get_search_links():
     """
@@ -50,7 +73,6 @@ def get_search_links():
     Notice that you should ONLY add URLs that start with "https://www.goodreads.com/book/show/" to 
     your list, and , and be sure to append the full path to the URL so that the url is in the format 
     “https://www.goodreads.com/book/show/kdkd".
-
     """
 
     url = "https://www.goodreads.com/search?q=fantasy&qid=NwUsLiA2Nc"
@@ -168,6 +190,12 @@ def write_csv(data, filename):
 
     This function should not return anything.
     """
+    
+    with open(filename, 'w', newline= '') as f:
+        write = csv.writer(f)
+        write.writerow(('Book title','Author Name'))
+        write.writerows(data)
+
     pass
 
 
@@ -264,8 +292,8 @@ class TestCases(unittest.TestCase):
         with open('test.csv', 'r') as f:
             lines = csv.reader(f)
         # check that there are 21 lines in the csv
-        for line in lines:
-            csv_lines.append(line)
+            for line in lines:
+                csv_lines.append(line)
         self.assertEqual(len(csv_lines), 21)
         # check that the header row is correct
         self.assertEqual(csv_lines[0][0], 'Book title')
