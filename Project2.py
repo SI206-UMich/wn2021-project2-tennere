@@ -81,8 +81,27 @@ def get_book_summary(book_url):
     You can easily capture CSS selectors with your browser's inspector window.
     Make sure to strip() any newlines from the book title and number of pages.
     """
+    
+    url = book_url
+    r = requests.get(url)
+    soup = BeautifulSoup(r.text, 'html.parser')
 
-    pass
+    tag = soup.find('h1', class_ = 'gr-h1 gr-h1--serif')
+    title = tag.get_text()
+    title = title.strip()
+
+    tag2 = soup.find('a', class_ = 'authorName')
+    auth = tag2.find('span')
+    author = auth.get_text()
+    author = author.strip()
+
+    tag3 = soup.find('span', itemprop = 'numberOfPages')
+    pgs = tag3.text
+    line = pgs.split()
+    pages = int(line[0])
+    
+    tup = (title, author, pages)
+    return tup
 
 
 def summarize_best_books(filepath):
@@ -96,7 +115,37 @@ def summarize_best_books(filepath):
     ("Fiction", "The Testaments (The Handmaid's Tale, #2)", "https://www.goodreads.com/choiceawards/best-fiction-books-2020") 
     to your list of tuples.
     """
-    pass
+
+    with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), filepath), 'r') as f:
+        url = f.read()
+    soup = BeautifulSoup(url, 'html.parser')
+
+    tag1 = soup.find_all('h4', class_ = 'category__copy')
+    categories_list = []
+    for tag in tag1:
+        x = tag.text.strip()
+        categories_list.append(x)
+
+    tag2 = soup.find_all('img', class_ = 'category__winnerImage')
+    titles_list = []
+    for tag in tag2:
+        x = tag['alt']
+        titles_list.append(x)
+
+    tag3 = soup.find_all('div', class_ = 'category clearFix')
+    link_list = []
+    for tag in tag3:
+        x = tag.find('a')
+        y = x['href']
+        link_list.append(y)
+
+    results = []
+    for i in range(len(categories_list)):
+        x = ()
+        x = (categories_list[i], titles_list[i], link_list[i])
+        results.append(x)
+
+    return results
 
 
 def write_csv(data, filename):
@@ -202,7 +251,7 @@ class TestCases(unittest.TestCase):
         # check that the first tuple is made up of the following 3 strings:'Fiction', "The Midnight Library", 'https://www.goodreads.com/choiceawards/best-fiction-books-2020'
         self.assertEqual(x[0], ('Fiction', "The Midnight Library", 'https://www.goodreads.com/choiceawards/best-fiction-books-2020'))
         # check that the last tuple is made up of the following 3 strings: 'Picture Books', 'Antiracist Baby', 'https://www.goodreads.com/choiceawards/best-picture-books-2020'
-        self.assertEqual(x[1], ('Picture Books', 'Antiracist Baby', 'https://www.goodreads.com/choiceawards/best-picture-books-2020'))
+        self.assertEqual(x[-1], ('Picture Books', 'Antiracist Baby', 'https://www.goodreads.com/choiceawards/best-picture-books-2020'))
 
 
     def test_write_csv(self):
